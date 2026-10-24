@@ -12,6 +12,7 @@ Usage:
 """
 import json
 import os
+import re
 import ssl
 import sys
 import time
@@ -83,15 +84,42 @@ def get_token(fresh=False):
 
 
 def run_agent(agent_id, inputs):
-    """Run an agent and return its output. Retries once on an expired session or a gateway error."""
+    """Run an agent and return its output."""
+    return run_agent_with_meta(agent_id, inputs)[0]
+
+
+def run_agent_with_meta(agent_id, inputs):
+    """Run an agent; return (output, meta) where meta has run_id, status, confidence and latency_ms.
+
+    Retries once on an expired session or a gateway error.
+    """
     for attempt in range(2):
         status, body = request("POST", f"/api/v1/agents/{agent_id}/run", {"inputs": inputs}, token=get_token(fresh=attempt > 0))
         if status == 200 and isinstance(body, dict):
-            return body.get("output")
+            meta = {
+                "run_id": body.get("run_id"),
+                "status": body.get("status"),
+                "confidence": body.get("confidence"),
+                "latency_ms": (body.get("performance") or {}).get("total_latency_ms"),
+            }
+            return body.get("output"), meta
         if status not in (401, 502, 503, 504):
             break
         time.sleep(2)
     raise AgenticOrgError(f"Agent run failed (HTTP {status}): {str(body)[:300]}")
+
+
+def parse_json_output(output):
+    """Our agents answer with a JSON object, sometimes as a string or wrapped in a code fence."""
+    if isinstance(output, dict):
+        if "reply" in output:
+            return output
+        output = output.get("text") or output.get("content") or json.dumps(output)
+    if isinstance(output, str):
+        match = re.search(r"\{.*\}", output, re.DOTALL)
+        if match:
+            return json.loads(match.group(0))
+    raise ValueError(f"Unexpected agent output: {str(output)[:200]}")
 
 
 def show(status, body):

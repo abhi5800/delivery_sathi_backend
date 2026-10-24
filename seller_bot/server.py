@@ -4,6 +4,7 @@
 
 Routes:
     GET  /                 landing page
+    GET  /demo?key=...     buyer demo: mock courier + buyer chat (API under /api/demo/, same key)
     POST /telegram/webhook incoming Telegram messages (webhook mode, e.g. on Render)
     GET  /webhook          Meta webhook verification
     POST /webhook          incoming WhatsApp messages
@@ -22,12 +23,15 @@ import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from config import ADMIN_KEY, HOST, PORT, PUBLIC_URL, SECURE_FORMS, TELEGRAM_MODE, VERIFY_TOKEN
+import buyer
 import db
 import onboarding
 import telegram
 import whatsapp
 
-LANDING_PAGE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "index.html")
+STATIC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+LANDING_PAGE = os.path.join(STATIC, "index.html")
+DEMO_PAGE = os.path.join(STATIC, "demo.html")
 
 PAGE_STYLE = """
 :root{--bg:#f6f7f5;--card:#fff;--text:#1d2420;--muted:#5d6b63;--line:#dfe4e0;--accent:#128c4a}
@@ -91,6 +95,44 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _json(self, status, obj):
+        self._reply(status, json.dumps(obj, ensure_ascii=False), "application/json; charset=utf-8")
+
+    def _demo_authorized(self, query=None):
+        key = self.headers.get("X-Demo-Key") or (query or {}).get("key", "")
+        if ADMIN_KEY and hmac.compare_digest(key, ADMIN_KEY):
+            return True
+        self._json(403, {"error": "Open the demo with ?key=<ADMIN_KEY>"})
+        return False
+
+    def _demo_post(self, path, raw):
+        if not self._demo_authorized():
+            return
+        try:
+            body = json.loads(raw or b"{}")
+            parts = path.removeprefix("/api/demo/").split("/")
+            if parts == ["seed"]:
+                buyer.seed(body.get("seller_id"))
+            elif len(parts) == 3 and parts[0] == "orders" and parts[2] == "event":
+                buyer.courier_event(parts[1], body.get("event"))
+            elif len(parts) == 3 and parts[0] == "orders" and parts[2] == "reply":
+                text = (body.get("text") or "").strip()[:500]
+                if not text:
+                    raise ValueError("Empty reply")
+                buyer.buyer_reply(parts[1], text)
+            elif len(parts) == 3 and parts[0] == "orders" and parts[2] == "pay":
+                buyer.pay(parts[1])
+            else:
+                self._json(404, {"error": "not found"})
+                return
+        except KeyError:
+            self._json(404, {"error": "order not found"})
+            return
+        except ValueError as e:
+            self._json(400, {"error": str(e)})
+            return
+        self._json(200, buyer.state())
+
     def _form(self):
         token = self.path.split("?")[0].removeprefix("/form/")
         form = db.get_form(token)
@@ -110,6 +152,12 @@ class Handler(BaseHTTPRequestHandler):
         elif url.path in ("/", "/index.html"):
             with open(LANDING_PAGE, "rb") as f:
                 self._reply(200, f.read())
+        elif url.path == "/demo":
+            with open(DEMO_PAGE, "rb") as f:
+                self._reply(200, f.read())
+        elif url.path == "/api/demo/state":
+            if self._demo_authorized(query):
+                self._json(200, buyer.state())
         elif url.path == "/webhook":
             if VERIFY_TOKEN and query.get("hub.mode") == "subscribe" and query.get("hub.verify_token") == VERIFY_TOKEN:
                 self._reply(200, query.get("hub.challenge", ""), "text/plain")
@@ -130,7 +178,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         raw = self.rfile.read(int(self.headers.get("Content-Length", 0)))
         path = self.path.split("?")[0]
-        if path == "/telegram/webhook":
+        if path.startswith("/api/demo/"):
+            self._demo_post(path, raw)
+        elif path == "/telegram/webhook":
             if not telegram.enabled() or not hmac.compare_digest(
                 self.headers.get("X-Telegram-Bot-Api-Secret-Token", ""), telegram.webhook_secret()
             ):
@@ -196,5 +246,5 @@ if __name__ == "__main__":
     if not (telegram.enabled() or whatsapp.enabled()):
         print("No channel configured: set TELEGRAM_BOT_TOKEN (or the WHATSAPP_ settings) in .env")
     print(f"Secure forms: {'on' if SECURE_FORMS else 'off'}")
-    print(f"Landing page: {PUBLIC_URL}/  Admin page: {PUBLIC_URL}/admin?key=<ADMIN_KEY>")
+    print(f"Landing page: {PUBLIC_URL}/  Admin: {PUBLIC_URL}/admin?key=<ADMIN_KEY>  Buyer demo: {PUBLIC_URL}/demo?key=<ADMIN_KEY>")
     ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()

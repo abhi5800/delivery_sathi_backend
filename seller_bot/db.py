@@ -37,6 +37,38 @@ CREATE TABLE IF NOT EXISTS forms (
     created_at TEXT NOT NULL,
     submitted_at TEXT
 );
+-- Buyer demo: COD orders moved along by a mock courier, and the buyer conversation per order.
+CREATE TABLE IF NOT EXISTS orders (
+    id TEXT PRIMARY KEY,
+    seller_id TEXT NOT NULL,
+    brand TEXT NOT NULL,
+    buyer_name TEXT NOT NULL,
+    buyer_language TEXT NOT NULL,
+    items TEXT NOT NULL,
+    cod_amount INTEGER NOT NULL,
+    address TEXT NOT NULL,
+    landmark TEXT,
+    city TEXT NOT NULL,
+    pincode TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'placed',
+    moment TEXT,
+    reattempt_date TEXT,
+    payment TEXT NOT NULL DEFAULT 'cod',
+    had_failure INTEGER NOT NULL DEFAULT 0,
+    saved INTEGER NOT NULL DEFAULT 0,
+    buyer_statement TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS order_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id TEXT NOT NULL,
+    sender TEXT NOT NULL CHECK (sender IN ('sathi', 'buyer', 'system')),
+    body TEXT NOT NULL,
+    meta_json TEXT,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS order_messages_order ON order_messages (order_id, id);
 -- Hackathon only: credentials are stored unencrypted. Encrypt before real sellers use this.
 CREATE TABLE IF NOT EXISTS seller_credentials (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

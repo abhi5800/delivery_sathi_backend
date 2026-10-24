@@ -11,7 +11,9 @@ import ao  # noqa: E402  (loads ../.env on import)
 SSL_CONTEXT = ao.SSL_CONTEXT
 
 with open(os.path.join(ROOT, "agenticorg", "agent_ids.json")) as f:
-    SELLER_AGENT_ID = os.getenv("SELLER_AGENT_ID") or json.load(f)["sathi_seller_onboarding"]
+    _agent_ids = json.load(f)
+SELLER_AGENT_ID = os.getenv("SELLER_AGENT_ID") or _agent_ids["sathi_seller_onboarding"]
+BUYER_AGENT_ID = os.getenv("BUYER_AGENT_ID") or _agent_ids["sathi_buyer_delivery"]
 
 # Render sets PORT and RENDER_EXTERNAL_URL; locally we fall back to .env values.
 PORT = int(os.getenv("PORT") or os.getenv("SELLER_BOT_PORT", "8080"))

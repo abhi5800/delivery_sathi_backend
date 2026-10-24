@@ -1,6 +1,5 @@
 """One seller message in, one reply out. The AgenticOrg agent decides the reply; we keep the state."""
 import json
-import re
 import secrets
 import threading
 from datetime import date
@@ -43,7 +42,7 @@ def handle_message(seller_id, text, profile_name=None, message_id=None):
             state.setdefault("profile_name", profile_name)
 
         try:
-            output = _parse_output(ao.run_agent(SELLER_AGENT_ID, {
+            output = ao.parse_json_output(ao.run_agent(SELLER_AGENT_ID, {
                 "seller_message": text,
                 "state": state,
                 "history": db.recent_messages(seller_id)[:-1],  # the current message is passed separately
@@ -75,19 +74,6 @@ def _send(seller_id, body, options=None):
     channels.send(seller_id, body, options)
     db.log_message(seller_id, "out", body)
     return body
-
-
-def _parse_output(output):
-    """The agent returns a JSON object, sometimes as a string or wrapped in a code fence."""
-    if isinstance(output, dict):
-        if "reply" in output:
-            return output
-        output = output.get("text") or output.get("content") or json.dumps(output)
-    if isinstance(output, str):
-        match = re.search(r"\{.*\}", output, re.DOTALL)
-        if match:
-            return json.loads(match.group(0))
-    raise ValueError(f"Unexpected agent output: {str(output)[:200]}")
 
 
 def complete_form(token, form, fields):

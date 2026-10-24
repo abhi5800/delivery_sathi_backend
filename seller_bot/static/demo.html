@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sathi Buyer Demo</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
+<style>
+:root{
+  --bg:#f4f3ef;--surface:#ffffff;--surface-2:#f9f8f5;--text:#1c211e;--muted:#5b655f;--line:#e2e1da;
+  --accent:#0f7a43;--accent-text:#ffffff;--accent-soft:#e3f2e9;
+  --warn:#a85a0c;--warn-soft:#fbefdf;--bad:#b3261e;--bad-soft:#fbe6e4;--info:#2357a5;--info-soft:#e5edf9;
+  --chat-bg:#ece5dc;--bubble-in:#ffffff;--bubble-out:#d7f5d3;--pill:#fff4c9;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#101311;--surface:#191e1b;--surface-2:#1e2420;--text:#e9ede9;--muted:#9ba8a0;--line:#2b332e;
+    --accent:#39c47a;--accent-text:#0b1a12;--accent-soft:#183324;
+    --warn:#f0a35b;--warn-soft:#3a2a17;--bad:#f2867e;--bad-soft:#3b1c1a;--info:#8db4f0;--info-soft:#1a2740;
+    --chat-bg:#0e1512;--bubble-in:#1f2a25;--bubble-out:#1d4a33;--pill:#3a3418;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101311;--surface:#191e1b;--surface-2:#1e2420;--text:#e9ede9;--muted:#9ba8a0;--line:#2b332e;
+  --accent:#39c47a;--accent-text:#0b1a12;--accent-soft:#183324;
+  --warn:#f0a35b;--warn-soft:#3a2a17;--bad:#f2867e;--bad-soft:#3b1c1a;--info:#8db4f0;--info-soft:#1a2740;
+  --chat-bg:#0e1512;--bubble-in:#1f2a25;--bubble-out:#1d4a33;--pill:#3a3418;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,select,input{font:inherit;color:inherit}
+.wrap{max-width:1280px;margin:0 auto;padding:16px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:16px}
+h1{margin:0;font-size:22px;letter-spacing:-.01em}
+.sub{margin:4px 0 0;color:var(--muted);max-width:70ch}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);max-width:240px}
+.btn{padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-weight:600}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-text)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi b{display:block;font-size:24px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi span{color:var(--muted);font-size:13px}
+.kpi.hero b{color:var(--accent)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:16px;align-items:start}
+@media (max-width:900px){.main{grid-template-columns:1fr}}
+.col-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px}
+.orders{display:flex;flex-direction:column;gap:10px}
+.order{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer}
+.order.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.order-top{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.order-top b{font-size:16px}
+.meta{color:var(--muted);font-size:13px;margin-top:2px}
+.note{font-size:13px;margin-top:6px}
+.actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.actions .btn{padding:5px 10px;font-size:13px;font-weight:600}
+.chip{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap;background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.chip.good{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.chip.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.chip.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.chip.info{background:var(--info-soft);color:var(--info);border-color:transparent}
+.phone{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;height:min(78vh,720px);position:sticky;top:16px}
+@media (max-width:900px){.phone{position:static;height:600px}}
+.phone-head{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700;flex:none}
+.phone-head small{display:block;color:var(--muted)}
+.thread{flex:1;overflow-y:auto;background:var(--chat-bg);padding:14px 12px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:84%;padding:8px 11px;border-radius:12px;font-size:14.5px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
+.msg.sathi{align-self:flex-start;background:var(--bubble-in);border-top-left-radius:3px}
+.msg.buyer{align-self:flex-end;background:var(--bubble-out);border-top-right-radius:3px}
+.msg .cap{display:block;margin-top:4px;font-size:11px;color:var(--muted)}
+.sys{align-self:center;background:var(--pill);border-radius:8px;padding:4px 10px;font-size:12.5px;max-width:92%;text-align:center}
+.sys .btn{margin-top:6px;display:block;margin-inline:auto}
+.typing{align-self:flex-start;background:var(--bubble-in);border-radius:12px;padding:8px 12px;font-size:13px;color:var(--muted)}
+.empty{color:var(--muted);text-align:center;margin:auto;padding:24px;font-size:14px}
+.quick{display:flex;gap:6px;overflow-x:auto;padding:8px 10px;border-top:1px solid var(--line);background:var(--surface)}
+.quick button{flex:none;border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:5px 11px;font-size:13px;cursor:pointer}
+.quick button:disabled{opacity:.45;cursor:not-allowed}
+form.compose{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);background:var(--surface)}
+form.compose input{flex:1;min-width:0;padding:9px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2)}
+.error{background:var(--bad-soft);color:var(--bad);border-radius:8px;padding:8px 12px;margin-bottom:12px;display:none}
+footer{color:var(--muted);font-size:12.5px;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>📦 Sathi buyer demo</h1>
+      <p class="sub">Left: a mock courier moves COD orders along. Right: the buyer's phone. Every Sathi message is decided live by the <b>Buyer Delivery agent on AgenticOrg</b>.</p>
+    </div>
+    <div class="controls">
+      <select id="seller" aria-label="Seller"></select>
+      <button class="btn btn-primary" id="seed">New demo orders</button>
+    </div>
+  </header>
+  <div class="error" id="error"></div>
+  <div class="kpis" id="kpis"></div>
+  <div class="main">
+    <div>
+      <p class="col-title">COD orders · mock courier</p>
+      <div class="orders" id="orders"></div>
+    </div>
+    <div class="phone" aria-label="Buyer chat">
+      <div class="phone-head" id="phone-head"></div>
+      <div class="thread" id="thread"></div>
+      <div class="quick" id="quick"></div>
+      <form class="compose" id="compose">
+        <input id="input" placeholder="Reply as the buyer…" autocomplete="off">
+        <button class="btn btn-primary" type="submit">Send</button>
+      </form>
+    </div>
+  </div>
+  <footer id="footer"></footer>
+</div>
+<script>
+const KEY = new URLSearchParams(location.search).get("key") || "";
+const STATUS = {
+  placed: ["New order", ""], post_order: ["Confirming", "info"], out_for_delivery: ["Out for delivery", "info"],
+  failed_attempt: ["Failed attempt", "warn"], confirmed: ["Confirmed", "good"], rescheduled: ["Rebooked", "good"],
+  address_fixed: ["Address fixed", "good"], upi_link_sent: ["UPI link sent", "info"], prepaid: ["Prepaid by UPI", "good"],
+  no_show_claim: ["No-show claim", "warn"], needs_seller: ["Needs seller", "warn"], cancelled: ["Cancelled", "bad"],
+  delivered: ["Delivered", "good"],
+};
+const EVENTS = [["post_order", "Confirm order"], ["out_for_delivery", "Out for delivery"], ["failed_attempt", "Failed attempt"], ["delivered", "Delivered"]];
+const QUICK = ["Haan, aaj ghar pe hoon", "Aaj ghar pe koi nahi, kal shaam aa jao", "Koi delivery boy aaya hi nahi, main poore din ghar pe thi",
+  "Address mein landmark add karo: Shiv mandir ke peeche, gali no. 4", "UPI se pay kar deta hoon", "Ab nahi chahiye, cancel kar do"];
+let state = null, selected = null, busy = null;
+
+const $ = (id) => document.getElementById(id);
+const rupees = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
+function el(tag, props = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "class") node.className = v;
+    else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+    else if (v !== undefined && v !== null && v !== false) node.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of children.flat()) if (c !== null && c !== undefined && c !== false) node.append(c.nodeType ? c : String(c));
+  return node;
+}
+
+async function api(path, body) {
+  const res = await fetch(path, {
+    method: body === undefined ? "GET" : "POST",
+    headers: { "X-Demo-Key": KEY, "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+function showError(msg) { const e = $("error"); e.textContent = msg || ""; e.style.display = msg ? "block" : "none"; }
+
+async function run(orderId, path, body) {
+  if (busy) return;
+  busy = orderId || "all";
+  render();
+  try { state = await api(path, body); showError(""); }
+  catch (err) { showError(err.message); }
+  finally { busy = null; render(); }
+}
+
+async function refresh() {
+  if (busy) return;
+  try { state = await api("/api/demo/state"); showError(""); render(); }
+  catch (err) { showError(err.message); }
+}
+
+function renderKpis() {
+  const t = state.totals;
+  const tiles = [
+    ["hero", t.deliveries_saved, "deliveries saved"],
+    ["hero", rupees(t.returns_cost_avoided), `return costs avoided (₹${state.return_cost} each)`],
+    ["", rupees(t.cod_value_saved), "COD revenue kept"],
+    ["", `${t.moved_to_upi} · ${rupees(t.upi_amount)}`, "moved to UPI"],
+    ["", t.failed_attempts, "failed attempts"],
+    ["", t.no_show_claims, "no-show claims logged"],
+  ];
+  $("kpis").replaceChildren(...tiles.map(([cls, value, label]) => el("div", { class: `kpi ${cls}` }, el("b", {}, value), el("span", {}, label))));
+}
+
+function renderSellers() {
+  const sel = $("seller"), current = sel.value;
+  const options = [el("option", { value: "" }, "Demo seller: Kesar Kurtis"),
+    ...state.sellers.filter((s) => s.step === "live" || s.name).map((s) => el("option", { value: s.id }, `${s.name} (${s.id.split(":")[0]})`))];
+  sel.replaceChildren(...options);
+  sel.value = current && [...sel.options].some((o) => o.value === current) ? current : (state.orders[0]?.seller_id?.startsWith("demo:") ? "" : state.orders[0]?.seller_id || "");
+}
+
+function renderOrders() {
+  if (!state.orders.length) {
+    $("orders").replaceChildren(el("div", { class: "order" }, el("div", { class: "empty" }, "No demo orders yet. Pick a seller and press “New demo orders”.")));
+    return;
+  }
+  $("orders").replaceChildren(...state.orders.map((o) => {
+    const [label, tone] = STATUS[o.status] || [o.status, ""];
+    const notes = [];
+    if (o.reattempt_date) notes.push(el("div", { class: "note" }, "📅 Delivery rebooked for ", el("b", {}, o.reattempt_date)));
+    if (o.payment === "upi_paid") notes.push(el("div", { class: "note" }, "💸 Paid by UPI, rider collects ₹0"));
+    if (o.buyer_statement) notes.push(el("div", { class: "note" }, "🗒️ Buyer: “", o.buyer_statement, "”"));
+    return el("div", { class: `order${o.id === selected ? " selected" : ""}`, onclick: () => { selected = o.id; render(); } },
+      el("div", { class: "order-top" }, el("b", {}, `#${o.id} · ${o.buyer_name}`), el("span", { class: `chip ${tone}` }, label)),
+      el("div", { class: "meta" }, `${o.city} ${o.pincode} · ${o.items} · ${rupees(o.cod_amount)} ${o.payment === "upi_paid" ? "prepaid" : "COD"} · ${o.brand}`),
+      el("div", { class: "meta" }, [o.address, o.landmark].filter(Boolean).join(", ")),
+      notes,
+      el("div", { class: "actions" }, EVENTS.map(([event, text]) =>
+        el("button", { class: "btn", disabled: !!busy || o.status === "delivered" || o.status === "cancelled",
+          onclick: (e) => { e.stopPropagation(); selected = o.id; run(o.id, `/api/demo/orders/${o.id}/event`, { event }); } }, text))));
+  }));
+}
+
+function renderPhone() {
+  const o = state.orders.find((x) => x.id === selected);
+  const disabled = !o || !!busy || o.status === "delivered" || o.status === "cancelled";
+  $("input").disabled = disabled;
+  $("compose").querySelector("button").disabled = disabled;
+  if (!o) {
+    $("phone-head").replaceChildren(el("div", { class: "avatar" }, "📱"), el("div", {}, el("b", {}, "Buyer's phone"), el("small", {}, "Select an order")));
+    $("thread").replaceChildren(el("div", { class: "empty" }, "Select an order, then press a courier button to see Sathi message the buyer."));
+    $("quick").replaceChildren();
+    return;
+  }
+  const lang = { hi: "Hindi", hinglish: "Hinglish", en: "English" }[o.buyer_language] || o.buyer_language;
+  $("phone-head").replaceChildren(el("div", { class: "avatar" }, o.buyer_name[0]),
+    el("div", {}, el("b", {}, o.buyer_name), el("small", {}, `Buyer · ${lang} · order #${o.id} from ${o.brand}`)));
+  const thread = $("thread"), atBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 40;
+  const items = o.messages.map((m) => {
+    if (m.sender === "system") {
+      const pay = m.meta?.pay_button && o.payment !== "upi_paid"
+        ? el("button", { class: "btn btn-primary", disabled: !!busy, onclick: () => run(o.id, `/api/demo/orders/${o.id}/pay`, {}) }, `Pay ${rupees(o.cod_amount)} by UPI`)
+        : null;
+      return el("div", { class: "sys" }, m.body, pay);
+    }
+    let cap = null;
+    if (m.sender === "sathi" && m.meta?.source === "agenticorg") {
+      const bits = ["AgenticOrg agent", m.meta.intent, m.meta.latency_ms ? `${(m.meta.latency_ms / 1000).toFixed(1)}s` : null,
+        m.meta.confidence != null ? `confidence ${m.meta.confidence}` : null, m.meta.run_id];
+      cap = el("span", { class: "cap" }, bits.filter(Boolean).join(" · "));
+    }
+    return el("div", { class: `msg ${m.sender}` }, m.body, cap);
+  });
+  if (!items.length) items.push(el("div", { class: "empty" }, "No messages yet. Press “Out for delivery” or “Failed attempt” on this order."));
+  if (busy === o.id) items.push(el("div", { class: "typing" }, "Sathi is typing…"));
+  thread.replaceChildren(...items);
+  if (atBottom || busy === o.id) thread.scrollTop = thread.scrollHeight;
+  $("quick").replaceChildren(...QUICK.map((q) => el("button", { type: "button", disabled, onclick: () => send(q) }, q)));
+}
+
+function render() {
+  if (!state) return;
+  if (!selected || !state.orders.some((o) => o.id === selected)) selected = state.orders[0]?.id || null;
+  $("seed").disabled = !!busy;
+  renderKpis(); renderSellers(); renderOrders(); renderPhone();
+  $("footer").textContent = "Courier, buyer channel and UPI payment are simulated for the demo. Sathi's replies and decisions come from the AgenticOrg agent.";
+}
+
+function send(text) {
+  const o = state?.orders.find((x) => x.id === selected);
+  if (!o || !text.trim()) return;
+  $("input").value = "";
+  run(o.id, `/api/demo/orders/${o.id}/reply`, { text: text.trim() });
+}
+
+$("compose").addEventListener("submit", (e) => { e.preventDefault(); send($("input").value); });
+$("seed").addEventListener("click", () => { selected = null; run(null, "/api/demo/seed", { seller_id: $("seller").value || null }); });
+
+if (!KEY) showError("Open this page with ?key=<ADMIN_KEY> at the end of the address.");
+refresh();
+setInterval(refresh, 4000);
+</script>
+</body>
+</html>
