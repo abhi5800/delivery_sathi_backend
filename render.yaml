@@ -1,0 +1,33 @@
+# Render Blueprint: Dashboard > New > Blueprint > pick this repo.
+# Values marked sync: false are asked for once in the dashboard and never stored in the repo.
+services:
+  - type: web
+    name: delivery-sathi
+    runtime: python
+    region: singapore
+    # Starter keeps the bot always on and allows a disk, so sellers' progress survives restarts.
+    # On the free plan, remove the disk block: the service sleeps when idle (first reply ~1 min)
+    # and the SQLite data is wiped on every restart or deploy.
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python seller_bot/server.py
+    healthCheckPath: /health
+    disk:
+      name: sathi-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: SELLER_BOT_DB
+        value: /var/data/sathi.db
+      - key: AGENTICORG_BASE_URL
+        value: https://agenticorg.hackathon.pinelabs.com
+      - key: AGENTICORG_EMAIL
+        sync: false
+      - key: AGENTICORG_PASSWORD
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: ADMIN_KEY
+        sync: false
