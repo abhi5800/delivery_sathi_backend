@@ -21,7 +21,7 @@ import threading
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from config import ADMIN_KEY, PORT, PUBLIC_URL, SECURE_FORMS, TELEGRAM_MODE, VERIFY_TOKEN
+from config import ADMIN_KEY, HOST, PORT, PUBLIC_URL, SECURE_FORMS, TELEGRAM_MODE, VERIFY_TOKEN
 import db
 import onboarding
 import telegram
@@ -197,4 +197,4 @@ if __name__ == "__main__":
         print("No channel configured: set TELEGRAM_BOT_TOKEN (or the WHATSAPP_ settings) in .env")
     print(f"Secure forms: {'on' if SECURE_FORMS else 'off'}")
     print(f"Landing page: {PUBLIC_URL}/  Admin page: {PUBLIC_URL}/admin?key=<ADMIN_KEY>")
-    ThreadingHTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
+    ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()

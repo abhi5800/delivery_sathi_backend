@@ -1,0 +1,18 @@
+[Unit]
+Description=Delivery Sathi seller onboarding bot (Telegram)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=sathi
+WorkingDirectory=/opt/delivery-sathi
+# Secrets live in /opt/delivery-sathi/.env (readable by the sathi user only); the bot loads it itself.
+Environment=TELEGRAM_MODE=poll
+Environment=HOST=127.0.0.1
+Environment=SELLER_BOT_DB=/var/lib/delivery-sathi/sathi.db
+ExecStart=/usr/bin/python3 seller_bot/server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -15,6 +15,8 @@ with open(os.path.join(ROOT, "agenticorg", "agent_ids.json")) as f:
 
 # Render sets PORT and RENDER_EXTERNAL_URL; locally we fall back to .env values.
 PORT = int(os.getenv("PORT") or os.getenv("SELLER_BOT_PORT", "8080"))
+# 127.0.0.1 keeps the admin page private on a server (reach it through an SSH tunnel).
+HOST = os.getenv("HOST", "0.0.0.0")
 # Public HTTPS address of this server; used for webhooks and form links sent to sellers.
 PUBLIC_URL = (os.getenv("PUBLIC_URL") or os.getenv("RENDER_EXTERNAL_URL") or f"http://localhost:{PORT}").rstrip("/")
 # "webhook" needs an https PUBLIC_URL (Render); "poll" works anywhere, including a laptop.
